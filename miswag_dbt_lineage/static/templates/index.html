@@ -1164,9 +1164,16 @@ let currentTheme = 'dark';
 // Load data
 async function loadData() {
   try {
-    const resp = await fetch('data/lineage.json');
-    data = await resp.json();
-    initApp();
+    // Check if data is embedded (for file:// protocol support)
+    if (window.EMBEDDED_DATA) {
+      data = window.EMBEDDED_DATA;
+      initApp();
+    } else {
+      // Fallback to fetch for backwards compatibility
+      const resp = await fetch('data/lineage.json');
+      data = await resp.json();
+      initApp();
+    }
   } catch (e) {
     console.error('Failed to load lineage data:', e);
   }
