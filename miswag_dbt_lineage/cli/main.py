@@ -67,7 +67,7 @@ def generate(
         resolve_path=True,
     ),
     output: Path = typer.Option(
-        "lineage-site",
+        "target/lineage_website",
         "--output",
         "-o",
         help="Output directory for the static site",
@@ -96,7 +96,7 @@ def generate(
     3. Generates a static website you can deploy anywhere
 
     Example:
-        miswag-dbt-lineage generate --manifest target/manifest.json --output lineage-site
+        miswag-dbt-lineage generate --manifest target/manifest.json --output target/lineage_website
     """
     console.print(Panel.fit(
         "[bold blue]miswag-dbt-lineage[/bold blue] 🚀\n"
@@ -187,7 +187,7 @@ def build(
         resolve_path=True,
     ),
     output: Path = typer.Option(
-        "lineage-site",
+        "target/lineage_website",
         "--output",
         "-o",
         help="Output directory for the static site",
@@ -215,7 +215,7 @@ def build(
     2. Generates the lineage site
 
     Example:
-        miswag-dbt-lineage build --project-dir . --output lineage-site
+        miswag-dbt-lineage build --project-dir . --output target/lineage_website
     """
     import subprocess
 

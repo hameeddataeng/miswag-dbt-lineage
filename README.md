@@ -36,7 +36,7 @@ pip install miswag-dbt-lineage
 Or install from source:
 
 ```bash
-git clone https://github.com/miswag/miswag-dbt-lineage.git
+git clone https://github.com/hameeddataeng/miswag-dbt-lineage.git
 cd miswag-dbt-lineage
 pip install -e .
 ```
@@ -49,24 +49,23 @@ pip install -e .
 # Navigate to your dbt project
 cd my-dbt-project
 
-# Generate lineage site
+# Generate lineage site (output defaults to target/lineage_website)
 miswag-dbt-lineage generate \
   --manifest target/manifest.json \
-  --catalog target/catalog.json \
-  --output lineage-site
+  --catalog target/catalog.json
 ```
 
 ### All-in-One Build
 
 ```bash
-# Runs 'dbt docs generate' + generates lineage site
-miswag-dbt-lineage build --output lineage-site
+# Runs 'dbt docs generate' + generates lineage site (output defaults to target/lineage_website)
+miswag-dbt-lineage build
 ```
 
 ### View Locally
 
 ```bash
-cd lineage-site
+cd target/lineage_website
 python -m http.server 8080
 # Open http://localhost:8080
 ```
@@ -84,7 +83,7 @@ miswag-dbt-lineage generate [OPTIONS]
 **Options:**
 - `--manifest, -m PATH` — Path to manifest.json (default: `target/manifest.json`)
 - `--catalog, -c PATH` — Path to catalog.json (optional but recommended)
-- `--output, -o PATH` — Output directory (default: `lineage-site`)
+- `--output, -o PATH` — Output directory (default: `target/lineage_website`)
 - `--dialect, -d TEXT` — SQL dialect: `clickhouse`, `postgres`, `snowflake`, `bigquery`, etc. (default: `clickhouse`)
 - `--verbose` — Enable verbose logging
 - `--help` — Show help
@@ -108,14 +107,14 @@ miswag-dbt-lineage build [OPTIONS]
 
 **Options:**
 - `--project-dir, -p PATH` — dbt project directory (default: `.`)
-- `--output, -o PATH` — Output directory (default: `lineage-site`)
+- `--output, -o PATH` — Output directory (default: `target/lineage_website`)
 - `--skip-dbt-docs` — Skip running `dbt docs generate`
 - `--dialect, -d TEXT` — SQL dialect (default: `clickhouse`)
 - `--help` — Show help
 
 **Example:**
 ```bash
-miswag-dbt-lineage build --output lineage-site --dialect postgres
+miswag-dbt-lineage build --dialect postgres
 ```
 
 ---
@@ -141,14 +140,14 @@ The generated site is a **fully static** collection of HTML/CSS/JS files. Deploy
 ### AWS S3
 
 ```bash
-aws s3 sync lineage-site s3://my-bucket/lineage-docs/
+aws s3 sync target/lineage_website s3://my-bucket/lineage-docs/
 aws s3 website s3://my-bucket --index-document index.html
 ```
 
 ### Google Cloud Storage
 
 ```bash
-gsutil -m rsync -r lineage-site gs://my-bucket/lineage-docs/
+gsutil -m rsync -r target/lineage_website gs://my-bucket/lineage-docs/
 gsutil web set -m index.html gs://my-bucket
 ```
 
@@ -158,14 +157,14 @@ gsutil web set -m index.html gs://my-bucket
 az storage blob upload-batch \
   --account-name mystorageaccount \
   --destination '$web' \
-  --source lineage-site
+  --source target/lineage_website
 ```
 
 ### GitHub Pages
 
 ```bash
 # Push to gh-pages branch
-cd lineage-site
+cd target/lineage_website
 git init
 git checkout -b gh-pages
 git add .
@@ -251,7 +250,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ```bash
 # Clone repo
-git clone https://github.com/miswag/miswag-dbt-lineage.git
+git clone https://github.com/hameeddataeng/miswag-dbt-lineage.git
 cd miswag-dbt-lineage
 
 # Install in editable mode with dev dependencies
@@ -283,9 +282,10 @@ This project is licensed under the **Apache License 2.0** - see the [LICENSE](LI
 
 ## 📧 Contact
 
-- **Author**: Miswag Hameed
-- **GitHub**: [miswag/miswag-dbt-lineage](https://github.com/miswag/miswag-dbt-lineage)
-- **Issues**: [Report a bug](https://github.com/miswag/miswag-dbt-lineage/issues)
+- **Author**: Hameed Mahmood
+- **GitHub**: [hameeddataeng/miswag-dbt-lineage](https://github.com/hameeddataeng/miswag-dbt-lineage)
+- **PyPI**: [miswag-dbt-lineage](https://pypi.org/project/miswag-dbt-lineage/)
+- **Issues**: [Report a bug](https://github.com/hameeddataeng/miswag-dbt-lineage/issues)
 
 ---
 
