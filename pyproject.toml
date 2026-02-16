@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "miswag-dbt-lineage"
+version = "0.1.0"
+description = "Generate beautiful, interactive column-level lineage for dbt projects"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Hameed Mahmood", email = "res.eng.hameed@hotmail.com"}
+]
+keywords = ["dbt", "lineage", "data", "column-lineage", "documentation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Database",
+]
+
+dependencies = [
+    "sqlglot>=20.0.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/miswag/miswag-dbt-lineage"
+Documentation = "https://github.com/miswag/miswag-dbt-lineage#readme"
+Repository = "https://github.com/miswag/miswag-dbt-lineage"
+Issues = "https://github.com/miswag/miswag-dbt-lineage/issues"
+
+[project.scripts]
+miswag-dbt-lineage = "miswag_dbt_lineage.cli:main"
+
+[tool.setuptools]
+packages = ["miswag_dbt_lineage", "miswag_dbt_lineage.cli", "miswag_dbt_lineage.static"]
+
+[tool.setuptools.package-data]
+miswag_dbt_lineage = ["static/templates/*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+select = ["E", "F", "I", "N", "W"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=miswag_dbt_lineage --cov-report=term-missing"

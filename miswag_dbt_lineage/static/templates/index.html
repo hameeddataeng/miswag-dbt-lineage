@@ -1,0 +1,2373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>dbt Documentation & Lineage Portal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-primary: #0a0e17;
+  --bg-secondary: #111827;
+  --bg-card: #1a2332;
+  --bg-hover: #222e42;
+  --border: #2d3f5e;
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+
+  --layer-source: #f59e0b;
+  --layer-staging: #8b5cf6;
+  --layer-intermediate: #06b6d4;
+  --layer-mart: #10b981;
+  --layer-seed: #f472b6;
+  --layer-other: #64748b;
+
+  --accent: #3b82f6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+}
+
+:root[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-hover: #f1f5f9;
+  --border: #e2e8f0;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Top Navigation */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  height: 60px;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab {
+  padding: 8px 20px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.tab:hover { background: var(--bg-hover); color: var(--text-primary); }
+.tab.active { background: var(--accent); color: white; }
+
+.stats {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.stat { color: var(--text-muted); }
+.stat strong { color: var(--text-primary); font-weight: 600; }
+
+/* Main Layout */
+.main-layout {
+  display: flex;
+  height: calc(100vh - 60px);
+}
+
+.sidebar {
+  width: 320px;
+  min-width: 320px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.search-box input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.filters {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.chip {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  transition: all 0.15s;
+}
+
+.chip:hover { border-color: var(--text-muted); }
+.chip.active { border-color: var(--accent); background: rgba(59, 130, 246, 0.1); color: var(--accent); }
+.chip[data-layer="source"].active { border-color: var(--layer-source); background: rgba(245, 158, 11, 0.1); color: var(--layer-source); }
+.chip[data-layer="staging"].active { border-color: var(--layer-staging); background: rgba(139, 92, 246, 0.1); color: var(--layer-staging); }
+.chip[data-layer="intermediate"].active { border-color: var(--layer-intermediate); background: rgba(6, 182, 212, 0.1); color: var(--layer-intermediate); }
+.chip[data-layer="mart"].active { border-color: var(--layer-mart); background: rgba(16, 185, 129, 0.1); color: var(--layer-mart); }
+.chip[data-layer="seed"].active { border-color: var(--layer-seed); background: rgba(244, 114, 182, 0.1); color: var(--layer-seed); }
+
+.model-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.model-item {
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  background: var(--bg-card);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+}
+
+.model-item:hover { background: var(--bg-hover); }
+.model-item.selected { border-color: var(--accent); background: rgba(59, 130, 246, 0.1); }
+
+.model-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.layer-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.model-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.model-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.content-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-content {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+#tab-column-lineage.active {
+  display: flex;
+}
+
+/* Lineage Tab */
+.lineage-modes {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  display: flex;
+  gap: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.mode-btn {
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.mode-btn.active { background: var(--accent); color: white; }
+
+.lineage-canvas {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(59,130,246,0.03) 0%, transparent 70%),
+    var(--bg-primary);
+}
+
+.lineage-svg {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+.lineage-svg:active { cursor: grabbing; }
+
+.canvas-controls {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.ctrl-btn {
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.ctrl-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  gap: 12px;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+
+/* Models Tab */
+.models-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.models-header {
+  margin-bottom: 24px;
+}
+
+.models-header h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.models-filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.models-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.models-table thead {
+  background: var(--bg-card);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.models-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.models-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.models-table tr {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.models-table tbody tr:hover {
+  background: var(--bg-card);
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+}
+
+.badge-layer {
+  border: 1px solid;
+}
+
+.model-detail-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.model-detail-modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1000px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  font-size: 20px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 24px;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-section {
+  margin-bottom: 24px;
+}
+
+.modal-section h4 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.columns-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+
+.columns-table th {
+  padding: 8px 12px;
+  text-align: left;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.columns-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.code-block {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+pre {
+  margin: 0;
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Detail Panel - Hidden since info is now inline in table nodes */
+.detail-panel {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  width: 360px;
+  max-height: calc(100% - 32px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  z-index: 50;
+  display: none !important;
+  flex-direction: column;
+}
+
+.detail-panel.visible {
+  display: flex;
+}
+
+.detail-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-title {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.detail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+.detail-section {
+  margin-bottom: 20px;
+}
+
+.detail-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+.detail-label {
+  color: var(--text-secondary);
+}
+
+.detail-value {
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.dep-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dep-item {
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.dep-item:hover {
+  background: var(--bg-hover);
+}
+
+.dep-transform {
+  font-size: 10px;
+  color: var(--warning);
+  margin-top: 4px;
+}
+
+/* SVG Nodes */
+.canvas-node {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.canvas-node.dimmed {
+  opacity: 0.15;
+}
+
+.canvas-node rect {
+  transition: stroke 0.2s, stroke-width 0.2s;
+}
+
+.canvas-node:hover rect {
+  stroke-width: 2;
+}
+
+.canvas-node.selected rect {
+  stroke: white !important;
+  stroke-width: 2.5;
+}
+
+.canvas-edge {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  opacity: 0.5;
+  transition: opacity 0.2s, stroke 0.2s;
+}
+
+.canvas-edge.highlighted {
+  stroke: var(--accent);
+  opacity: 1;
+  stroke-width: 2.5;
+}
+
+.canvas-edge.dimmed {
+  opacity: 0.1;
+}
+
+/* Column Lineage Nodes */
+.column-node {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.column-node.dimmed {
+  opacity: 0.2;
+}
+
+.column-node.highlighted {
+  opacity: 1;
+}
+
+.column-node rect.node-bg {
+  transition: stroke 0.2s, stroke-width 0.2s, fill 0.2s;
+}
+
+.column-node:hover rect.node-bg {
+  stroke-width: 2;
+  fill: var(--bg-hover);
+}
+
+.column-node.selected rect.node-bg {
+  stroke: var(--accent) !important;
+  stroke-width: 2.5;
+  fill: rgba(59, 130, 246, 0.1);
+}
+
+.column-edge {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  opacity: 0.6;
+  transition: opacity 0.2s, stroke 0.2s, stroke-width 0.2s;
+  pointer-events: none;
+}
+
+.column-edge.highlighted {
+  stroke: var(--accent);
+  opacity: 1;
+  stroke-width: 2.5;
+}
+
+.column-edge.dimmed {
+  opacity: 0.15;
+}
+
+/* Theme Toggle */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent);
+}
+
+.theme-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.theme-icon.active {
+  background: var(--accent);
+  color: white;
+}
+
+.theme-icon:not(.active) {
+  color: var(--text-muted);
+}
+
+/* Depth Control */
+.depth-control {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.depth-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.depth-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.depth-btn {
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  transition: all 0.15s;
+}
+
+.depth-btn:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.depth-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+/* Column List */
+.column-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.column-item {
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  background: var(--bg-card);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+  font-size: 12px;
+}
+
+.column-item:hover {
+  background: var(--bg-hover);
+}
+
+.column-item.selected {
+  border-color: var(--accent);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.column-item-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.column-item-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 11px;
+}
+
+.column-item-type {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.column-item-def {
+  font-size: 9px;
+  color: var(--warning);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="logo">⬡ dbt Portal</div>
+  <div class="tabs">
+    <button class="tab active" data-tab="table-lineage">Table Lineage</button>
+    <button class="tab" data-tab="column-lineage">Column Lineage</button>
+    <button class="tab" data-tab="models">Models</button>
+    <button class="tab" data-tab="sources">Sources</button>
+    <button class="tab" data-tab="tests">Tests</button>
+  </div>
+  <div style="display: flex; align-items: center; gap: 16px;">
+    <div class="stats" id="stats"></div>
+    <div class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">
+      <div class="theme-icon active" id="theme-dark">🌙</div>
+      <div class="theme-icon" id="theme-light">☀️</div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Layout -->
+<div class="main-layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="search-box">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" id="search" placeholder="Search models, columns..." />
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="filter-label">Layers</div>
+      <div class="filter-chips" id="layer-filters"></div>
+
+      <div class="filter-label" style="margin-top: 12px;">Directories</div>
+      <div class="filter-chips" id="dir-filters"></div>
+    </div>
+
+    <div class="model-list" id="model-list"></div>
+  </div>
+
+  <!-- Content Area -->
+  <div class="content-area">
+    <!-- Table Lineage Tab -->
+    <div class="tab-content active" id="tab-table-lineage">
+      <div class="lineage-canvas">
+        <!-- Depth Control -->
+        <div class="depth-control" id="table-depth-control" style="display: none;">
+          <span class="depth-label">Depth</span>
+          <div class="depth-buttons">
+            <button class="depth-btn active" data-depth="1" onclick="setTableDepth(1)">1</button>
+            <button class="depth-btn" data-depth="2" onclick="setTableDepth(2)">2</button>
+            <button class="depth-btn" data-depth="3" onclick="setTableDepth(3)">3</button>
+            <button class="depth-btn" data-depth="4" onclick="setTableDepth(4)">4</button>
+            <button class="depth-btn" data-depth="5" onclick="setTableDepth(5)">5</button>
+          </div>
+        </div>
+
+        <div class="empty-state" id="table-lineage-empty">
+          <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+          <h3>Select a model to view table lineage</h3>
+          <p style="font-size: 13px;">Choose from the sidebar to see upstream and downstream model dependencies</p>
+        </div>
+        <svg class="lineage-svg" id="table-lineage-svg" style="display:none;">
+          <defs>
+            <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="var(--border)" />
+            </marker>
+            <marker id="arrowhead-hl" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="var(--accent)" />
+            </marker>
+          </defs>
+          <g id="table-canvas-root">
+            <g id="table-edges-layer"></g>
+            <g id="table-nodes-layer"></g>
+          </g>
+        </svg>
+
+        <div class="canvas-controls">
+          <button class="ctrl-btn" id="table-btn-zoom-in" title="Zoom In">+</button>
+          <button class="ctrl-btn" id="table-btn-zoom-out" title="Zoom Out">−</button>
+          <button class="ctrl-btn" id="table-btn-fit" title="Fit View">⊡</button>
+          <button class="ctrl-btn" id="table-btn-reset" title="Reset">✕</button>
+        </div>
+
+        <!-- Detail Panel -->
+        <div class="detail-panel" id="table-detail-panel">
+          <div class="detail-header">
+            <div class="detail-title" id="table-detail-title"></div>
+            <button class="modal-close" id="table-detail-close">×</button>
+          </div>
+          <div class="detail-body" id="table-detail-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column Lineage Tab -->
+    <div class="tab-content" id="tab-column-lineage">
+      <!-- Column Selection Sidebar (reusing existing sidebar structure) -->
+      <div class="sidebar" id="column-sidebar" style="display: none;">
+        <div class="sidebar-header">
+          <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">
+            Select a column
+          </div>
+          <div class="search-box">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="text" id="column-search" placeholder="Search columns..." />
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="filter-label">Depth</div>
+          <div class="depth-buttons">
+            <button class="depth-btn active" data-depth="1" onclick="setColumnDepth(1)">1</button>
+            <button class="depth-btn" data-depth="2" onclick="setColumnDepth(2)">2</button>
+            <button class="depth-btn" data-depth="3" onclick="setColumnDepth(3)">3</button>
+            <button class="depth-btn" data-depth="4" onclick="setColumnDepth(4)">4</button>
+            <button class="depth-btn" data-depth="5" onclick="setColumnDepth(5)">5</button>
+          </div>
+        </div>
+
+        <div class="column-list" id="column-list"></div>
+      </div>
+
+      <!-- Column Lineage Canvas -->
+      <div class="lineage-canvas" style="flex: 1;">
+        <div class="empty-state" id="column-lineage-empty">
+          <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <h3>Select a model from the left sidebar</h3>
+          <p style="font-size: 13px;">Then choose a column to visualize its lineage</p>
+        </div>
+        <svg class="lineage-svg" id="column-lineage-svg" style="display:none;">
+          <defs>
+            <marker id="col-arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="var(--border)" />
+            </marker>
+            <marker id="col-arrowhead-hl" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="var(--accent)" />
+            </marker>
+          </defs>
+          <g id="column-canvas-root">
+            <g id="column-edges-layer"></g>
+            <g id="column-nodes-layer"></g>
+          </g>
+        </svg>
+
+        <div class="canvas-controls">
+          <button class="ctrl-btn" id="column-btn-zoom-in" title="Zoom In">+</button>
+          <button class="ctrl-btn" id="column-btn-zoom-out" title="Zoom Out">−</button>
+          <button class="ctrl-btn" id="column-btn-fit" title="Fit View">⊡</button>
+          <button class="ctrl-btn" id="column-btn-reset" title="Reset">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Models Tab -->
+    <div class="tab-content" id="tab-models">
+      <div class="models-container">
+        <div class="models-header">
+          <h2>Models Catalog</h2>
+          <p style="color: var(--text-secondary); margin-top: 4px;">Browse all dbt models in your project</p>
+
+          <div class="models-filters">
+            <input type="text" id="models-search" placeholder="Search models..."
+              style="padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); outline: none; font-size: 13px;" />
+          </div>
+        </div>
+
+        <table class="models-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Layer</th>
+              <th>Directory</th>
+              <th>Materialized</th>
+              <th>Columns</th>
+              <th>Tests</th>
+            </tr>
+          </thead>
+          <tbody id="models-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sources Tab -->
+    <div class="tab-content" id="tab-sources">
+      <div class="models-container">
+        <div class="models-header">
+          <h2>Sources</h2>
+          <p style="color: var(--text-secondary); margin-top: 4px;">External data sources</p>
+        </div>
+        <table class="models-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Database</th>
+              <th>Schema</th>
+              <th>Loader</th>
+              <th>Columns</th>
+            </tr>
+          </thead>
+          <tbody id="sources-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tests Tab -->
+    <div class="tab-content" id="tab-tests">
+      <div class="models-container">
+        <div class="models-header">
+          <h2>Tests</h2>
+          <p style="color: var(--text-secondary); margin-top: 4px;">Data quality tests</p>
+        </div>
+        <table class="models-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>Model</th>
+              <th>Column</th>
+            </tr>
+          </thead>
+          <tbody id="tests-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Model Detail Modal -->
+<div class="model-detail-modal" id="model-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-title"></h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// dbt Portal Application
+// ═══════════════════════════════════════════════════════════════
+
+const LAYER_COLORS = {
+  source: '#f59e0b',
+  staging: '#8b5cf6',
+  intermediate: '#06b6d4',
+  mart: '#10b981',
+  seed: '#f472b6',
+  other: '#64748b',
+};
+
+let data = null;
+let selectedModel = null;
+let selectedColumn = null;
+let activeLayers = new Set();
+let activeDirs = new Set();
+let tableTransform = { x: 0, y: 0, k: 1 };
+let columnTransform = { x: 0, y: 0, k: 1 };
+let currentTab = 'table-lineage';
+let tableDepth = 1;
+let columnDepth = 1;
+let currentTheme = 'dark';
+
+// Load data
+async function loadData() {
+  try {
+    const resp = await fetch('data/lineage.json');
+    data = await resp.json();
+    initApp();
+  } catch (e) {
+    console.error('Failed to load lineage data:', e);
+  }
+}
+
+function initApp() {
+  updateStats();
+  buildFilters();
+  buildModelList();
+  buildModelsTables();
+  setupEventListeners();
+  setupTabs();
+}
+
+function updateStats() {
+  const stats = data.metadata.stats;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat">Models <strong>${stats.models}</strong></div>
+    <div class="stat">Sources <strong>${stats.sources}</strong></div>
+    <div class="stat">Tests <strong>${stats.tests}</strong></div>
+    <div class="stat">Edges <strong>${stats.column_edges}</strong></div>
+  `;
+}
+
+function buildFilters() {
+  // Layer filters
+  const layers = [...new Set(data.models.map(m => m.layer))];
+  layers.forEach(layer => activeLayers.add(layer));
+
+  const layerHtml = layers.map(layer =>
+    `<div class="chip active" data-layer="${layer}" onclick="toggleLayer('${layer}')">${layer}</div>`
+  ).join('');
+  document.getElementById('layer-filters').innerHTML = layerHtml;
+
+  // Directory filters - extract only first-level directory
+  const dirs = [...new Set(data.models.map(m => {
+    if (!m.directory) return '';
+    // Get only the first part before the first slash
+    const firstLevel = m.directory.split('/')[0];
+    return firstLevel;
+  }).filter(d => d))];
+
+  dirs.forEach(dir => activeDirs.add(dir));
+
+  const dirHtml = dirs.map(dir =>
+    `<div class="chip active" data-dir="${dir}" onclick="toggleDir('${dir}')">${dir}</div>`
+  ).join('');
+  document.getElementById('dir-filters').innerHTML = dirHtml;
+}
+
+function toggleLayer(layer) {
+  if (activeLayers.has(layer)) {
+    activeLayers.delete(layer);
+  } else {
+    activeLayers.add(layer);
+  }
+  document.querySelector(`[data-layer="${layer}"]`).classList.toggle('active');
+  buildModelList();
+}
+
+function toggleDir(dir) {
+  if (activeDirs.has(dir)) {
+    activeDirs.delete(dir);
+  } else {
+    activeDirs.add(dir);
+  }
+  document.querySelector(`[data-dir="${dir}"]`).classList.toggle('active');
+  buildModelList();
+}
+
+function buildModelList() {
+  const filtered = data.models.filter(m => {
+    // Check layer filter
+    if (!activeLayers.has(m.layer)) return false;
+
+    // Check directory filter - match by first-level directory
+    if (m.directory === '') return true; // No directory always included
+    const firstLevel = m.directory.split('/')[0];
+    return activeDirs.has(firstLevel);
+  });
+
+  const html = filtered.map(model => {
+    const color = LAYER_COLORS[model.layer] || LAYER_COLORS.other;
+    const isSelected = selectedModel === model.unique_id;
+
+    return `
+      <div class="model-item ${isSelected ? 'selected' : ''}" onclick="selectModel('${model.unique_id}')">
+        <div class="model-header">
+          <div class="layer-dot" style="background: ${color}"></div>
+          <div class="model-name">${model.name}</div>
+        </div>
+        <div class="model-meta">${model.columns.length} cols · ${model.layer}</div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('model-list').innerHTML = html;
+}
+
+function selectModel(uid) {
+  selectedModel = uid;
+  selectedColumn = null;
+  buildModelList();
+
+  if (currentTab === 'table-lineage') {
+    renderTableLineage(uid);
+  } else if (currentTab === 'column-lineage') {
+    buildColumnList(uid);
+    showColumnSidebar();
+  }
+}
+
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+
+  // Update toggle icons
+  document.getElementById('theme-dark').classList.toggle('active');
+  document.getElementById('theme-light').classList.toggle('active');
+
+  // Save preference
+  localStorage.setItem('theme', currentTheme);
+}
+
+function setTableDepth(depth) {
+  tableDepth = depth;
+
+  // Update active button
+  document.querySelectorAll('#table-depth-control .depth-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.depth) === depth);
+  });
+
+  if (selectedModel) {
+    renderTableLineage(selectedModel);
+  }
+}
+
+function setColumnDepth(depth) {
+  columnDepth = depth;
+
+  // Update active button
+  document.querySelectorAll('#column-sidebar .depth-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.depth) === depth);
+  });
+
+  if (selectedColumn) {
+    renderColumnLineageForColumn(selectedColumn.modelId, selectedColumn.columnName);
+  }
+}
+
+function showColumnSidebar() {
+  document.getElementById('column-sidebar').style.display = 'flex';
+  document.getElementById('column-lineage-empty').querySelector('h3').textContent = 'Select a column from the sidebar';
+  document.getElementById('column-lineage-empty').querySelector('p').textContent = 'Choose a column to visualize its lineage path';
+}
+
+function buildColumnList(modelId) {
+  const model = data.models.find(m => m.unique_id === modelId);
+  if (!model) return;
+
+  const html = model.columns.map(col => {
+    const isSelected = selectedColumn && selectedColumn.columnName === col.name;
+    return `
+      <div class="column-item ${isSelected ? 'selected' : ''}" onclick='selectColumnFromList("${modelId}", "${col.name}")'>
+        <div class="column-item-header">
+          <div class="column-item-name">${col.name}</div>
+          <div class="column-item-type">${col.data_type || '—'}</div>
+        </div>
+        ${col.is_transformed && col.definition ? `<div class="column-item-def">${truncate(col.definition, 35)}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('column-list').innerHTML = html;
+}
+
+function selectColumnFromList(modelId, columnName) {
+  selectedColumn = { modelId, columnName };
+  buildColumnList(modelId);
+  renderColumnLineageForColumn(modelId, columnName);
+}
+
+function getUpstreamModels(modelId, maxDepth) {
+  const result = [];
+  const visited = new Set([modelId]);
+
+  function traverse(uid, currentDepth) {
+    if (currentDepth >= maxDepth) return;
+
+    const upstreamEdges = data.table_edges.filter(e => e.target === uid);
+    upstreamEdges.forEach(edge => {
+      if (!visited.has(edge.source)) {
+        visited.add(edge.source);
+        result.push({ uid: edge.source, depth: -(currentDepth + 1) });
+        traverse(edge.source, currentDepth + 1);
+      }
+    });
+  }
+
+  traverse(modelId, 0);
+  return result;
+}
+
+function getDownstreamModels(modelId, maxDepth) {
+  const result = [];
+  const visited = new Set([modelId]);
+
+  function traverse(uid, currentDepth) {
+    if (currentDepth >= maxDepth) return;
+
+    const downstreamEdges = data.table_edges.filter(e => e.source === uid);
+    downstreamEdges.forEach(edge => {
+      if (!visited.has(edge.target)) {
+        visited.add(edge.target);
+        result.push({ uid: edge.target, depth: currentDepth + 1 });
+        traverse(edge.target, currentDepth + 1);
+      }
+    });
+  }
+
+  traverse(modelId, 0);
+  return result;
+}
+
+function renderTableLineage(modelId) {
+  const model = data.models.find(m => m.unique_id === modelId);
+  if (!model) return;
+
+  document.getElementById('table-lineage-empty').style.display = 'none';
+  document.getElementById('table-lineage-svg').style.display = 'block';
+  document.getElementById('table-depth-control').style.display = 'flex';
+
+  // Get upstream and downstream with depth
+  const upstream = getUpstreamModels(modelId, tableDepth);
+  const downstream = getDownstreamModels(modelId, tableDepth);
+
+  // Build node list with depth levels
+  const nodes = [
+    ...upstream,
+    { uid: modelId, depth: 0 },
+    ...downstream,
+  ];
+
+  // Layout - larger nodes to show more information
+  const NODE_WIDTH = 240;
+  const NODE_HEIGHT = 100;
+  const GAP_X = 320;
+  const GAP_Y = 130;
+
+  const centerX = 600;
+  const centerY = 400;
+
+  const positions = {};
+
+  // Group nodes by depth level
+  const nodesByDepth = {};
+  nodes.forEach(node => {
+    if (!nodesByDepth[node.depth]) {
+      nodesByDepth[node.depth] = [];
+    }
+    nodesByDepth[node.depth].push(node);
+  });
+
+  // Position nodes
+  Object.entries(nodesByDepth).forEach(([depth, depthNodes]) => {
+    const d = parseInt(depth);
+    const x = centerX + d * GAP_X;
+
+    depthNodes.forEach((node, idx) => {
+      const mod = data.models.find(m => m.unique_id === node.uid);
+      if (!mod) return;
+
+      const yOffset = (idx - (depthNodes.length - 1) / 2) * GAP_Y;
+      const y = centerY + yOffset;
+
+      positions[node.uid] = { x, y, model: mod };
+    });
+  });
+
+  // Render
+  const nodesLayer = document.getElementById('table-nodes-layer');
+  const edgesLayer = document.getElementById('table-edges-layer');
+  nodesLayer.innerHTML = '';
+  edgesLayer.innerHTML = '';
+
+  // Edges
+  data.table_edges.forEach(edge => {
+    if (!positions[edge.source] || !positions[edge.target]) return;
+
+    const src = positions[edge.source];
+    const tgt = positions[edge.target];
+
+    const x1 = src.x + NODE_WIDTH;
+    const y1 = src.y + NODE_HEIGHT / 2;
+    const x2 = tgt.x;
+    const y2 = tgt.y + NODE_HEIGHT / 2;
+
+    const cpx = (x1 + x2) / 2;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M${x1},${y1} C${cpx},${y1} ${cpx},${y2} ${x2},${y2}`);
+    path.setAttribute('class', 'canvas-edge');
+    path.setAttribute('marker-end', 'url(#arrowhead)');
+    edgesLayer.appendChild(path);
+  });
+
+  // Nodes - with all information inline
+  Object.entries(positions).forEach(([uid, pos]) => {
+    const color = LAYER_COLORS[pos.model.layer] || LAYER_COLORS.other;
+    const isSelected = uid === modelId;
+
+    // Calculate upstream/downstream counts
+    const upstreamCount = data.table_edges.filter(e => e.target === uid).length;
+    const downstreamCount = data.table_edges.filter(e => e.source === uid).length;
+    const testCount = pos.model.columns.reduce((sum, c) => sum + c.tests.length, 0);
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', `canvas-node ${isSelected ? 'selected' : ''}`);
+
+    // Background card
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', pos.x);
+    rect.setAttribute('y', pos.y);
+    rect.setAttribute('width', NODE_WIDTH);
+    rect.setAttribute('height', NODE_HEIGHT);
+    rect.setAttribute('rx', 8);
+    rect.setAttribute('fill', 'var(--bg-card)');
+    rect.setAttribute('stroke', color);
+    rect.setAttribute('stroke-width', isSelected ? 2.5 : 1.5);
+    g.appendChild(rect);
+
+    // Model name
+    const modelName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    modelName.setAttribute('x', pos.x + 12);
+    modelName.setAttribute('y', pos.y + 22);
+    modelName.setAttribute('fill', isSelected ? '#fff' : 'var(--text-primary)');
+    modelName.setAttribute('font-family', 'JetBrains Mono, monospace');
+    modelName.setAttribute('font-size', 13);
+    modelName.setAttribute('font-weight', 600);
+    modelName.textContent = truncate(pos.model.name, 22);
+    g.appendChild(modelName);
+
+    // Layer badge
+    const layerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    layerText.setAttribute('x', pos.x + 12);
+    layerText.setAttribute('y', pos.y + 40);
+    layerText.setAttribute('fill', color);
+    layerText.setAttribute('font-size', 10);
+    layerText.setAttribute('font-weight', 600);
+    layerText.textContent = pos.model.layer.toUpperCase();
+    g.appendChild(layerText);
+
+    // Materialization type
+    const materText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    materText.setAttribute('x', pos.x + 12);
+    materText.setAttribute('y', pos.y + 56);
+    materText.setAttribute('fill', 'var(--text-muted)');
+    materText.setAttribute('font-size', 10);
+    materText.textContent = pos.model.materialized;
+    g.appendChild(materText);
+
+    // Columns count
+    const colsText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    colsText.setAttribute('x', pos.x + 12);
+    colsText.setAttribute('y', pos.y + 72);
+    colsText.setAttribute('fill', 'var(--text-secondary)');
+    colsText.setAttribute('font-size', 10);
+    colsText.textContent = `${pos.model.columns.length} cols`;
+    g.appendChild(colsText);
+
+    // Tests count (if any)
+    if (testCount > 0) {
+      const testsText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      testsText.setAttribute('x', pos.x + 70);
+      testsText.setAttribute('y', pos.y + 72);
+      testsText.setAttribute('fill', 'var(--success)');
+      testsText.setAttribute('font-size', 10);
+      testsText.textContent = `· ${testCount} tests`;
+      g.appendChild(testsText);
+    }
+
+    // Upstream/downstream indicators
+    const depsText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    depsText.setAttribute('x', pos.x + 12);
+    depsText.setAttribute('y', pos.y + 88);
+    depsText.setAttribute('fill', 'var(--text-muted)');
+    depsText.setAttribute('font-size', 9);
+    depsText.textContent = `↑${upstreamCount} ↓${downstreamCount}`;
+    g.appendChild(depsText);
+
+    g.addEventListener('click', () => selectModel(uid));
+    nodesLayer.appendChild(g);
+  });
+
+  fitTableView();
+}
+
+function showTableDetailPanel(id) {
+  const panel = document.getElementById('table-detail-panel');
+  const model = data.models.find(m => m.unique_id === id);
+  if (!model) return;
+
+  document.getElementById('table-detail-title').textContent = model.name;
+
+  const upstream = data.table_edges.filter(e => e.target === id);
+  const downstream = data.table_edges.filter(e => e.source === id);
+
+  const html = `
+    <div class="detail-section">
+      <div class="detail-section-title">Info</div>
+      <div class="detail-row">
+        <span class="detail-label">Layer</span>
+        <span class="detail-value">${model.layer}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Materialized</span>
+        <span class="detail-value">${model.materialized}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Columns</span>
+        <span class="detail-value">${model.columns.length}</span>
+      </div>
+      ${model.stats.row_count ? `
+      <div class="detail-row">
+        <span class="detail-label">Rows</span>
+        <span class="detail-value">${model.stats.row_count.toLocaleString()}</span>
+      </div>
+      ` : ''}
+    </div>
+
+    ${model.description ? `
+    <div class="detail-section">
+      <div class="detail-section-title">Description</div>
+      <p style="font-size: 13px; line-height: 1.6; color: var(--text-secondary);">${model.description}</p>
+    </div>
+    ` : ''}
+
+    ${upstream.length > 0 ? `
+    <div class="detail-section">
+      <div class="detail-section-title">Upstream (${upstream.length})</div>
+      <div class="dep-list">
+        ${upstream.map(e => {
+          const upModel = data.models.find(m => m.unique_id === e.source);
+          return upModel ? `<div class="dep-item" onclick="selectModel('${upModel.unique_id}')">${upModel.name}</div>` : '';
+        }).join('')}
+      </div>
+    </div>
+    ` : ''}
+
+    ${downstream.length > 0 ? `
+    <div class="detail-section">
+      <div class="detail-section-title">Downstream (${downstream.length})</div>
+      <div class="dep-list">
+        ${downstream.map(e => {
+          const downModel = data.models.find(m => m.unique_id === e.target);
+          return downModel ? `<div class="dep-item" onclick="selectModel('${downModel.unique_id}')">${downModel.name}</div>` : '';
+        }).join('')}
+      </div>
+    </div>
+    ` : ''}
+  `;
+
+  document.getElementById('table-detail-body').innerHTML = html;
+  panel.classList.add('visible');
+}
+
+// Helper functions for column lineage depth traversal
+function getUpstreamColumns(columnId, maxDepth) {
+  const result = [];
+  const visited = new Set([columnId]);
+
+  function traverse(colId, currentDepth) {
+    if (currentDepth >= maxDepth) return;
+
+    const upstreamEdges = data.column_edges.filter(e => e.target === colId);
+    upstreamEdges.forEach(edge => {
+      if (!visited.has(edge.source)) {
+        visited.add(edge.source);
+        result.push({ columnId: edge.source, depth: -(currentDepth + 1) });
+        traverse(edge.source, currentDepth + 1);
+      }
+    });
+  }
+
+  traverse(columnId, 0);
+  return result;
+}
+
+function getDownstreamColumns(columnId, maxDepth) {
+  const result = [];
+  const visited = new Set([columnId]);
+
+  function traverse(colId, currentDepth) {
+    if (currentDepth >= maxDepth) return;
+
+    const downstreamEdges = data.column_edges.filter(e => e.source === colId);
+    downstreamEdges.forEach(edge => {
+      if (!visited.has(edge.target)) {
+        visited.add(edge.target);
+        result.push({ columnId: edge.target, depth: currentDepth + 1 });
+        traverse(edge.target, currentDepth + 1);
+      }
+    });
+  }
+
+  traverse(columnId, 0);
+  return result;
+}
+
+function renderColumnLineageForColumn(modelId, columnName) {
+  document.getElementById('column-lineage-empty').style.display = 'none';
+  document.getElementById('column-lineage-svg').style.display = 'block';
+
+  // Find the actual column ID from the edges
+  // The user selected a column by model+name, but edges may use different formats (with CTEs/aliases)
+  // We need to find all possible column IDs that match this model and column name
+  const possibleColumnIds = new Set();
+
+  // Add the simple format
+  possibleColumnIds.add(`${modelId}.${columnName}`);
+
+  // Find all column IDs in edges that match this model and column name
+  data.column_edges.forEach(edge => {
+    [edge.source, edge.target].forEach(colId => {
+      const parts = colId.split('.');
+      const colNameFromId = parts[parts.length - 1];
+
+      // For models: check if it starts with the model ID
+      if (colId.startsWith(modelId + '.') && colNameFromId === columnName) {
+        possibleColumnIds.add(colId);
+      }
+    });
+  });
+
+  // Use the first found ID or fallback to simple format
+  const columnId = possibleColumnIds.values().next().value || `${modelId}.${columnName}`;
+
+  // Get upstream and downstream columns with depth - but search using ALL possible IDs
+  const upstreamColumns = [];
+  const downstreamColumns = [];
+  const visited = new Set();
+
+  // Start from all possible column IDs
+  possibleColumnIds.forEach(startId => {
+    const upstream = getUpstreamColumns(startId, columnDepth);
+    const downstream = getDownstreamColumns(startId, columnDepth);
+
+    upstream.forEach(col => {
+      if (!visited.has(col.columnId)) {
+        visited.add(col.columnId);
+        upstreamColumns.push(col);
+      }
+    });
+
+    downstream.forEach(col => {
+      if (!visited.has(col.columnId)) {
+        visited.add(col.columnId);
+        downstreamColumns.push(col);
+      }
+    });
+  });
+
+  // Build column node list with depth
+  const columns = [
+    ...upstreamColumns,
+    { columnId, depth: 0 },
+    ...downstreamColumns,
+  ];
+
+  // Get column metadata for each columnId
+  const columnData = {};
+  columns.forEach(col => {
+    // Parse column ID - format is {model_unique_id}.{column_name}
+    // For models: model.project.model_name.column_name
+    // For sources: source.project.database.schema.table.column_name (can have aliases/CTEs in between)
+    const parts = col.columnId.split('.');
+    const colName = parts[parts.length - 1]; // Column name is always last
+
+    // Try to find the model by progressively removing parts from the end
+    let model = null;
+    let modelId = null;
+
+    // For models, try: model.project.model_name
+    if (parts[0] === 'model' && parts.length >= 4) {
+      modelId = parts.slice(0, 3).join('.');
+      model = data.models.find(m => m.unique_id === modelId);
+    }
+
+    // For sources, try: source.project.database.table_name (skip schema/aliases)
+    if (!model && parts[0] === 'source' && parts.length >= 4) {
+      // Try different combinations to find the source
+      for (let i = 4; i <= Math.min(parts.length - 1, 6); i++) {
+        modelId = parts.slice(0, i).join('.');
+        model = data.sources.find(s => s.unique_id === modelId);
+        if (model) break;
+      }
+    }
+
+    if (model) {
+      const column = model.columns.find(c => c.name === colName);
+      if (column) {
+        columnData[col.columnId] = {
+          name: colName,
+          type: column.data_type || '—',
+          definition: column.definition || '',
+          is_transformed: column.is_transformed || false,
+          modelName: model.name,
+          layer: model.layer || 'source',
+          depth: col.depth
+        };
+      } else {
+        // Column not found in model metadata, but we can still show basic info
+        columnData[col.columnId] = {
+          name: colName,
+          type: '—',
+          definition: '',
+          is_transformed: false,
+          modelName: model.name,
+          layer: model.layer || 'source',
+          depth: col.depth
+        };
+      }
+    } else {
+      // Model not found - create a placeholder entry
+      const modelName = parts.slice(0, -1).join('.');
+      columnData[col.columnId] = {
+        name: colName,
+        type: '—',
+        definition: '',
+        is_transformed: false,
+        modelName: modelName,
+        layer: 'other',
+        depth: col.depth
+      };
+    }
+  });
+
+  // Layout constants - simpler nodes showing just column info
+  const NODE_WIDTH = 280;
+  const NODE_HEIGHT = 130; // Increased to accommodate 2-line definition
+  const GAP_X = 350;
+  const GAP_Y = 160; // Increased gap to prevent overlap
+  const centerX = 600;
+  const centerY = 400;
+
+  // Group columns by depth
+  const columnsByDepth = {};
+  columns.forEach(col => {
+    if (!columnsByDepth[col.depth]) {
+      columnsByDepth[col.depth] = [];
+    }
+    columnsByDepth[col.depth].push(col);
+  });
+
+  // Calculate positions
+  const positions = {};
+  Object.entries(columnsByDepth).forEach(([depth, depthColumns]) => {
+    const d = parseInt(depth);
+    const x = centerX + d * GAP_X;
+
+    depthColumns.forEach((col, idx) => {
+      const yOffset = (idx - (depthColumns.length - 1) / 2) * GAP_Y;
+      const y = centerY + yOffset;
+
+      if (columnData[col.columnId]) {
+        positions[col.columnId] = { x, y, ...columnData[col.columnId] };
+      }
+    });
+  });
+
+  // Render
+  const nodesLayer = document.getElementById('column-nodes-layer');
+  const edgesLayer = document.getElementById('column-edges-layer');
+  nodesLayer.innerHTML = '';
+  edgesLayer.innerHTML = '';
+
+  // Render edges
+  const relevantEdges = data.column_edges.filter(edge =>
+    positions[edge.source] && positions[edge.target]
+  );
+
+  // Define edge colors and labels based on transformation type
+  const EDGE_STYLES = {
+    direct: { color: '#6b7280', dashArray: '', label: '' },
+    renamed: { color: '#6b7280', dashArray: '', label: 'REN' },
+    function: { color: '#3b82f6', dashArray: '', label: 'FN' },
+    case_expression: { color: '#8b5cf6', dashArray: '5,3', label: 'CASE' },
+    aggregated: { color: '#f59e0b', dashArray: '5,3', label: 'AGG' },
+    calculated: { color: '#06b6d4', dashArray: '', label: 'CALC' },
+  };
+
+  relevantEdges.forEach(edge => {
+    const src = positions[edge.source];
+    const tgt = positions[edge.target];
+
+    const x1 = src.x + NODE_WIDTH;
+    const y1 = src.y + NODE_HEIGHT / 2;
+    const x2 = tgt.x;
+    const y2 = tgt.y + NODE_HEIGHT / 2;
+
+    const cpx = (x1 + x2) / 2;
+
+    // Get edge style based on transformation type
+    const edgeType = edge.type || 'direct';
+    const style = EDGE_STYLES[edgeType] || EDGE_STYLES.direct;
+
+    // Create path
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M${x1},${y1} C${cpx},${y1} ${cpx},${y2} ${x2},${y2}`);
+    path.setAttribute('class', 'column-edge');
+    path.setAttribute('stroke', style.color);
+    path.setAttribute('stroke-dasharray', style.dashArray);
+    path.setAttribute('marker-end', 'url(#col-arrowhead)');
+    edgesLayer.appendChild(path);
+
+    // Add edge label if transformation type is not direct
+    if (style.label) {
+      const labelX = cpx;
+      const labelY = (y1 + y2) / 2;
+
+      // Background for label
+      const labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      labelBg.setAttribute('x', labelX - 18);
+      labelBg.setAttribute('y', labelY - 9);
+      labelBg.setAttribute('width', 36);
+      labelBg.setAttribute('height', 16);
+      labelBg.setAttribute('rx', 3);
+      labelBg.setAttribute('fill', 'var(--bg-card)');
+      labelBg.setAttribute('stroke', style.color);
+      labelBg.setAttribute('stroke-width', 1);
+      edgesLayer.appendChild(labelBg);
+
+      // Label text
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', labelX);
+      label.setAttribute('y', labelY + 4);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('font-family', 'JetBrains Mono, monospace');
+      label.setAttribute('font-size', 8);
+      label.setAttribute('font-weight', 600);
+      label.setAttribute('fill', style.color);
+      label.textContent = style.label;
+      edgesLayer.appendChild(label);
+    }
+  });
+
+  // Render individual column nodes
+  Object.entries(positions).forEach(([colId, pos]) => {
+    const color = LAYER_COLORS[pos.layer] || LAYER_COLORS.other;
+    const isSelected = colId === columnId;
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', `column-node ${isSelected ? 'selected' : ''}`);
+
+    // Background card
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('class', 'node-bg');
+    bg.setAttribute('x', pos.x);
+    bg.setAttribute('y', pos.y);
+    bg.setAttribute('width', NODE_WIDTH);
+    bg.setAttribute('height', NODE_HEIGHT);
+    bg.setAttribute('rx', 8);
+    bg.setAttribute('fill', isSelected ? 'rgba(59, 130, 246, 0.15)' : 'var(--bg-card)');
+    bg.setAttribute('stroke', color);
+    bg.setAttribute('stroke-width', isSelected ? 2.5 : 1.5);
+    g.appendChild(bg);
+
+    // Column name
+    const colName = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    colName.setAttribute('x', pos.x + 16);
+    colName.setAttribute('y', pos.y + 28);
+    colName.setAttribute('fill', 'var(--text-primary)');
+    colName.setAttribute('font-family', 'JetBrains Mono, monospace');
+    colName.setAttribute('font-size', 14);
+    colName.setAttribute('font-weight', 600);
+    colName.textContent = truncate(pos.name, 24);
+    g.appendChild(colName);
+
+    // Data type
+    const typeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    typeText.setAttribute('x', pos.x + 16);
+    typeText.setAttribute('y', pos.y + 48);
+    typeText.setAttribute('fill', 'var(--text-muted)');
+    typeText.setAttribute('font-size', 11);
+    typeText.textContent = truncate(pos.type, 26);
+    g.appendChild(typeText);
+
+    // Model name (small)
+    const modelText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    modelText.setAttribute('x', pos.x + 16);
+    modelText.setAttribute('y', pos.y + 67);
+    modelText.setAttribute('fill', color);
+    modelText.setAttribute('font-size', 10);
+    modelText.textContent = truncate(pos.modelName, 28);
+    g.appendChild(modelText);
+
+    // Definition (if transformed) - full width, 2 lines using foreignObject
+    if (pos.is_transformed && pos.definition) {
+      const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+      fo.setAttribute('x', pos.x + 16);
+      fo.setAttribute('y', pos.y + 80);
+      fo.setAttribute('width', NODE_WIDTH - 32);
+      fo.setAttribute('height', 40);
+
+      const div = document.createElement('div');
+      div.style.cssText = 'font-family: JetBrains Mono, monospace; font-size: 9px; color: var(--warning); line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word;';
+      div.textContent = '= ' + pos.definition;
+
+      fo.appendChild(div);
+      g.appendChild(fo);
+    }
+
+    // Add click event to pivot to this column's lineage
+    g.addEventListener('click', () => {
+      // Extract model ID and column name from colId
+      const parts = colId.split('.');
+      const clickedColumnName = parts[parts.length - 1];
+
+      // Find the model ID by trying to match against known models
+      let clickedModelId = null;
+
+      // For models: model.project.model_name
+      if (parts[0] === 'model' && parts.length >= 4) {
+        clickedModelId = parts.slice(0, 3).join('.');
+      }
+
+      // For sources: source.project.database.table (try different lengths)
+      if (!clickedModelId && parts[0] === 'source' && parts.length >= 4) {
+        for (let i = 4; i <= Math.min(parts.length - 1, 6); i++) {
+          const testId = parts.slice(0, i).join('.');
+          if (data.sources.find(s => s.unique_id === testId)) {
+            clickedModelId = testId;
+            break;
+          }
+        }
+      }
+
+      // Verify this model/column exists in our data
+      if (clickedModelId) {
+        const model = data.models.find(m => m.unique_id === clickedModelId) ||
+                      data.sources.find(s => s.unique_id === clickedModelId);
+        if (model && model.columns.find(c => c.name === clickedColumnName)) {
+          // Pivot to this column's lineage
+          selectColumnFromList(clickedModelId, clickedColumnName);
+        }
+      }
+    });
+
+    nodesLayer.appendChild(g);
+  });
+
+  // Only fit view on first load (when transform is at default position)
+  // This preserves zoom level when navigating between nodes
+  if (columnTransform.x === 0 && columnTransform.y === 0 && columnTransform.k === 1) {
+    fitColumnView();
+  } else {
+    // Just apply the current transform to maintain zoom/pan
+    applyColumnTransform();
+  }
+}
+
+function selectColumn(modelId, columnName) {
+  selectedColumn = { modelId, columnName };
+  highlightColumnPath(modelId, columnName);
+}
+
+function highlightColumnPath(modelId, columnName) {
+  const columnId = `${modelId}.${columnName}`;
+  // For simplified view, we don't need complex highlighting
+  // The selected column is already highlighted in the rendering
+}
+
+function clearHighlight() {
+  if (selectedColumn) return;
+  // Clear any highlight state
+}
+
+function buildModelsTables() {
+  // Models table
+  const modelsHtml = data.models.map(m => {
+    const color = LAYER_COLORS[m.layer] || LAYER_COLORS.other;
+    return `
+      <tr onclick="openModelDetail('${m.unique_id}')">
+        <td><strong>${m.name}</strong></td>
+        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${m.description || '—'}</td>
+        <td><span class="badge badge-layer" style="border-color: ${color}; color: ${color};">${m.layer}</span></td>
+        <td style="font-family: JetBrains Mono, monospace; font-size: 11px;">${m.directory || '—'}</td>
+        <td><span class="badge" style="background: var(--bg-hover);">${m.materialized}</span></td>
+        <td>${m.columns.length}</td>
+        <td>${m.columns.reduce((sum, c) => sum + c.tests.length, 0)}</td>
+      </tr>
+    `;
+  }).join('');
+  document.getElementById('models-table-body').innerHTML = modelsHtml;
+
+  // Sources table
+  const sourcesHtml = data.sources.map(s => `
+    <tr>
+      <td><strong>${s.name}</strong></td>
+      <td>${s.description || '—'}</td>
+      <td>${s.database || '—'}</td>
+      <td>${s.schema || '—'}</td>
+      <td>${s.loader || '—'}</td>
+      <td>${s.columns.length}</td>
+    </tr>
+  `).join('');
+  document.getElementById('sources-table-body').innerHTML = sourcesHtml;
+
+  // Tests table
+  const testsHtml = data.tests.map(t => {
+    const model = data.models.find(m => m.unique_id === t.model);
+    return `
+      <tr>
+        <td style="font-family: JetBrains Mono, monospace; font-size: 11px;">${t.name}</td>
+        <td><span class="badge" style="background: var(--bg-hover);">${t.test_type}</span></td>
+        <td><span class="badge" style="${t.severity === 'ERROR' ? 'background: rgba(239,68,68,0.1); color: var(--danger);' : 'background: rgba(245,158,11,0.1); color: var(--warning);'}">${t.severity}</span></td>
+        <td>${model ? model.name : '—'}</td>
+        <td>${t.column || '—'}</td>
+      </tr>
+    `;
+  }).join('');
+  document.getElementById('tests-table-body').innerHTML = testsHtml;
+}
+
+function openModelDetail(uid) {
+  const model = data.models.find(m => m.unique_id === uid);
+  if (!model) return;
+
+  document.getElementById('modal-title').textContent = model.name;
+
+  const html = `
+    <div class="modal-section">
+      <h4>Overview</h4>
+      <p style="font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin-bottom: 12px;">${model.description || 'No description'}</p>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+        <div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">LAYER</div>
+          <div style="font-size: 13px; color: ${LAYER_COLORS[model.layer]};">${model.layer}</div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">MATERIALIZED</div>
+          <div style="font-size: 13px;">${model.materialized}</div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">COLUMNS</div>
+          <div style="font-size: 13px;">${model.columns.length}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h4>Columns</h4>
+      <table class="columns-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Definition</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${model.columns.map(c => `
+            <tr>
+              <td style="font-family: JetBrains Mono, monospace;"><strong>${c.name}</strong></td>
+              <td><span class="badge" style="background: var(--bg-hover); font-size: 10px;">${c.data_type}</span></td>
+              <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${c.description || '—'}</td>
+              <td style="font-family: JetBrains Mono, monospace; font-size: 10px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; color: ${c.is_transformed ? 'var(--warning)' : 'var(--text-muted)'};">${c.definition ? truncate(c.definition, 40) : '—'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    ${model.raw_code ? `
+    <div class="modal-section">
+      <h4>SQL Code</h4>
+      <div class="code-block">
+        <pre><code class="language-sql">${escapeHtml(model.raw_code)}</code></pre>
+      </div>
+    </div>
+    ` : ''}
+  `;
+
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('model-modal').classList.add('active');
+
+  // Highlight code
+  Prism.highlightAll();
+}
+
+function closeModal() {
+  document.getElementById('model-modal').classList.remove('active');
+}
+
+function setupEventListeners() {
+  // Table lineage controls
+  document.getElementById('table-btn-zoom-in').addEventListener('click', () => {
+    tableTransform.k = Math.min(3, tableTransform.k * 1.2);
+    applyTableTransform();
+  });
+
+  document.getElementById('table-btn-zoom-out').addEventListener('click', () => {
+    tableTransform.k = Math.max(0.3, tableTransform.k / 1.2);
+    applyTableTransform();
+  });
+
+  document.getElementById('table-btn-fit').addEventListener('click', fitTableView);
+
+  document.getElementById('table-btn-reset').addEventListener('click', () => {
+    selectedModel = null;
+    buildModelList();
+    document.getElementById('table-lineage-empty').style.display = 'flex';
+    document.getElementById('table-lineage-svg').style.display = 'none';
+    document.getElementById('table-detail-panel').classList.remove('visible');
+  });
+
+  document.getElementById('table-detail-close').addEventListener('click', () => {
+    document.getElementById('table-detail-panel').classList.remove('visible');
+  });
+
+  // Column lineage controls
+  document.getElementById('column-btn-zoom-in').addEventListener('click', () => {
+    columnTransform.k = Math.min(3, columnTransform.k * 1.2);
+    applyColumnTransform();
+  });
+
+  document.getElementById('column-btn-zoom-out').addEventListener('click', () => {
+    columnTransform.k = Math.max(0.3, columnTransform.k / 1.2);
+    applyColumnTransform();
+  });
+
+  document.getElementById('column-btn-fit').addEventListener('click', fitColumnView);
+
+  document.getElementById('column-btn-reset').addEventListener('click', () => {
+    selectedModel = null;
+    selectedColumn = null;
+    buildModelList();
+    document.getElementById('column-lineage-empty').style.display = 'flex';
+    document.getElementById('column-lineage-svg').style.display = 'none';
+    clearHighlight();
+  });
+
+  // Close modal on background click
+  document.getElementById('model-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'model-modal') closeModal();
+  });
+
+  // Setup pan/zoom
+  setupTablePanZoom();
+  setupColumnPanZoom();
+}
+
+function setupTabs() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+      currentTab = target;
+
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(`tab-${target}`).classList.add('active');
+
+      // Show/hide main sidebar based on tab
+      const mainSidebar = document.querySelector('.main-layout > .sidebar');
+      if (target === 'models' || target === 'sources' || target === 'tests') {
+        // Hide sidebar for catalog tabs
+        mainSidebar.style.display = 'none';
+      } else {
+        // Show sidebar for lineage tabs
+        mainSidebar.style.display = 'flex';
+      }
+
+      // Re-render lineage if model is selected and switching between lineage tabs
+      if (selectedModel && (target === 'table-lineage' || target === 'column-lineage')) {
+        if (target === 'table-lineage') {
+          renderTableLineage(selectedModel);
+        } else if (target === 'column-lineage') {
+          buildColumnList(selectedModel);
+          showColumnSidebar();
+        }
+      }
+    });
+  });
+}
+
+function setupTablePanZoom() {
+  const svg = document.getElementById('table-lineage-svg');
+  const root = document.getElementById('table-canvas-root');
+  let isPanning = false;
+  let panStart = { x: 0, y: 0 };
+
+  svg.addEventListener('mousedown', (e) => {
+    if (e.target === svg || e.target.id === 'table-lineage-svg') {
+      isPanning = true;
+      panStart = { x: e.clientX - tableTransform.x, y: e.clientY - tableTransform.y };
+    }
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isPanning) return;
+    tableTransform.x = e.clientX - panStart.x;
+    tableTransform.y = e.clientY - panStart.y;
+    applyTableTransform();
+  });
+
+  window.addEventListener('mouseup', () => {
+    isPanning = false;
+  });
+
+  svg.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const rect = svg.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    tableTransform.x = mx - (mx - tableTransform.x) * delta;
+    tableTransform.y = my - (my - tableTransform.y) * delta;
+    tableTransform.k *= delta;
+    tableTransform.k = Math.max(0.3, Math.min(3, tableTransform.k));
+
+    applyTableTransform();
+  });
+}
+
+function setupColumnPanZoom() {
+  const svg = document.getElementById('column-lineage-svg');
+  const root = document.getElementById('column-canvas-root');
+  let isPanning = false;
+  let panStart = { x: 0, y: 0 };
+
+  svg.addEventListener('mousedown', (e) => {
+    if (e.target === svg || e.target.id === 'column-lineage-svg') {
+      isPanning = true;
+      panStart = { x: e.clientX - columnTransform.x, y: e.clientY - columnTransform.y };
+    }
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isPanning) return;
+    columnTransform.x = e.clientX - panStart.x;
+    columnTransform.y = e.clientY - panStart.y;
+    applyColumnTransform();
+  });
+
+  window.addEventListener('mouseup', () => {
+    isPanning = false;
+  });
+
+  svg.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const rect = svg.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    columnTransform.x = mx - (mx - columnTransform.x) * delta;
+    columnTransform.y = my - (my - columnTransform.y) * delta;
+    columnTransform.k *= delta;
+    columnTransform.k = Math.max(0.3, Math.min(3, columnTransform.k));
+
+    applyColumnTransform();
+  });
+}
+
+function applyTableTransform() {
+  const root = document.getElementById('table-canvas-root');
+  root.setAttribute('transform', `translate(${tableTransform.x},${tableTransform.y}) scale(${tableTransform.k})`);
+}
+
+function applyColumnTransform() {
+  const root = document.getElementById('column-canvas-root');
+  root.setAttribute('transform', `translate(${columnTransform.x},${columnTransform.y}) scale(${columnTransform.k})`);
+}
+
+function fitTableView() {
+  tableTransform = { x: 50, y: 50, k: 1 };
+  applyTableTransform();
+}
+
+function fitColumnView() {
+  columnTransform = { x: 50, y: 50, k: 1 };
+  applyColumnTransform();
+}
+
+function truncate(str, len) {
+  return str && str.length > len ? str.slice(0, len - 1) + '…' : str;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Start
+loadData();
+</script>
+
+</body>
+</html>
