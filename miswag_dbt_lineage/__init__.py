@@ -2,7 +2,7 @@
 miswag-dbt-lineage: Generate beautiful, interactive column-level lineage for dbt projects
 """
 
-__version__ = "0.1.2"
+__version__ = "0.1.4"
 __author__ = "Miswag Hameed"
 __license__ = "Apache-2.0"
 

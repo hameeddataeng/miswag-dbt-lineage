@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2024-02-16
+
+### Note
+- This release maintains the same code as v0.1.2 but with an updated version number
+- v0.1.3 was skipped due to implementation issues
+- This is the stable version with embedded data support for file:// protocol
+
 ## [0.1.2] - 2024-02-16
 
 ### Added
@@ -52,7 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI/CD workflows
 - Documentation and examples
 
-[Unreleased]: https://github.com/hameeddataeng/miswag-dbt-lineage/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/hameeddataeng/miswag-dbt-lineage/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/hameeddataeng/miswag-dbt-lineage/compare/v0.1.2...v0.1.4
 [0.1.2]: https://github.com/hameeddataeng/miswag-dbt-lineage/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/hameeddataeng/miswag-dbt-lineage/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/hameeddataeng/miswag-dbt-lineage/releases/tag/v0.1.0
