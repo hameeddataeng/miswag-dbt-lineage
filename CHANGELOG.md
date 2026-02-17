@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-02-17
+
+### Fixed
+- **Critical bug fix**: Fixed AttributeError in `build` command that prevented it from running
+  - Error: `AttributeError: 'function' object has no attribute 'allow_extra_args'`
+  - Changed from incorrect `typer.Context` invocation to direct function call
+  - The `build` command now properly invokes the `generate` command internally
+  - Location: `miswag_dbt_lineage/cli/main.py:260`
+
 ## [0.1.4] - 2024-02-16
 
 ### Note
@@ -59,7 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI/CD workflows
 - Documentation and examples
 
-[Unreleased]: https://github.com/hameeddataeng/miswag-dbt-lineage/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/hameeddataeng/miswag-dbt-lineage/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/hameeddataeng/miswag-dbt-lineage/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/hameeddataeng/miswag-dbt-lineage/compare/v0.1.2...v0.1.4
 [0.1.2]: https://github.com/hameeddataeng/miswag-dbt-lineage/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/hameeddataeng/miswag-dbt-lineage/compare/v0.1.0...v0.1.1

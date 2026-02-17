@@ -256,10 +256,8 @@ def build(
         console.print(f"[red]✗[/red] Manifest not found at {manifest}")
         raise typer.Exit(code=1)
 
-    # Call the generate command
-    ctx = typer.Context(generate)
-    ctx.invoke(
-        generate,
+    # Call the generate command directly
+    generate(
         manifest=manifest,
         catalog=catalog if catalog.exists() else None,
         output=output,
